@@ -1,0 +1,32 @@
+{{> base}}
+
+<div>
+  <h2>Subscription Cancellation Confirmation</h2>
+  <p>Dear {{name}},</p>
+  <p>We're sorry to see you go. Your subscription to the {{plan}} plan has been canceled.</p>
+
+  <h3>Cancellation Details:</h3>
+  <ul>
+    <li>Plan: {{plan}}</li>
+    <li>Access Until: {{formatDate endDate}}</li>
+  </ul>
+
+  <p>Your subscription will remain active until {{formatDate endDate}}. During this time, you can:</p>
+  <ul>
+    <li>Continue using all features of your current plan</li>
+    <li>Export your data</li>
+    <li>Download any reports or analytics</li>
+  </ul>
+
+  <p>If you change your mind, you can reactivate your subscription at any time before {{formatDate endDate}}.</p>
+
+  <a href="{{dashboardUrl}}" class="button">Reactivate Subscription</a>
+
+  <p>We value your feedback. If you'd like to share why you're leaving, please take a moment to complete our exit survey.</p>
+
+  <a href="{{feedbackUrl}}" class="button">Provide Feedback</a>
+
+  <p>Thank you for being a valued customer. We hope to serve you again in the future.</p>
+
+  <p>Best regards,<br>The Blockchain Voting System Team</p>
+</div> 

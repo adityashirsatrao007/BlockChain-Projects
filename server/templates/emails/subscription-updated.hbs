@@ -1,0 +1,52 @@
+{{> base}}
+
+<div>
+  <h2>Subscription Plan Updated</h2>
+  <p>Dear {{name}},</p>
+  <p>Your subscription plan has been successfully updated from {{oldPlan}} to {{newPlan}}.</p>
+
+  <h3>Plan Change Details:</h3>
+  <ul>
+    <li>Previous Plan: {{oldPlan}}</li>
+    <li>New Plan: {{newPlan}}</li>
+  </ul>
+
+  <h3>New Plan Features:</h3>
+  <ul class="feature-list">
+    {{#if features.maxElections}}
+      <li>Up to {{features.maxElections}} elections</li>
+    {{else}}
+      <li>Unlimited elections</li>
+    {{/if}}
+    {{#if features.maxVoters}}
+      <li>Up to {{features.maxVoters}} voters per election</li>
+    {{else}}
+      <li>Unlimited voters</li>
+    {{/if}}
+    {{#if features.maxCandidates}}
+      <li>Up to {{features.maxCandidates}} candidates per election</li>
+    {{else}}
+      <li>Unlimited candidates</li>
+    {{/if}}
+    {{#if features.customBranding}}
+      <li>Custom branding</li>
+    {{/if}}
+    {{#if features.advancedAnalytics}}
+      <li>Advanced analytics</li>
+    {{/if}}
+    {{#if features.apiAccess}}
+      <li>API access</li>
+    {{/if}}
+    {{#if features.prioritySupport}}
+      <li>Priority support</li>
+    {{/if}}
+  </ul>
+
+  <p>Your new plan features are now available. You can start using them right away!</p>
+
+  <a href="{{dashboardUrl}}" class="button">Go to Dashboard</a>
+
+  <p>If you have any questions about your new plan or need assistance, our support team is here to help.</p>
+
+  <p>Best regards,<br>The Blockchain Voting System Team</p>
+</div> 

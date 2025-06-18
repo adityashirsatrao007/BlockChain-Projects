@@ -1,0 +1,58 @@
+{{> base}}
+
+<div>
+  <h2>Welcome to Your New Subscription!</h2>
+  <p>Dear {{name}},</p>
+  <p>Thank you for subscribing to our {{plan}} plan. We're excited to have you on board!</p>
+
+  <h3>Your Subscription Details:</h3>
+  <ul>
+    <li>Plan: {{plan}}</li>
+    <li>Start Date: {{formatDate startDate}}</li>
+    <li>Next Billing Date: {{formatDate endDate}}</li>
+  </ul>
+
+  <h3>Your Plan Features:</h3>
+  <ul class="feature-list">
+    {{#if features.maxElections}}
+      <li>Up to {{features.maxElections}} elections</li>
+    {{else}}
+      <li>Unlimited elections</li>
+    {{/if}}
+    {{#if features.maxVoters}}
+      <li>Up to {{features.maxVoters}} voters per election</li>
+    {{else}}
+      <li>Unlimited voters</li>
+    {{/if}}
+    {{#if features.maxCandidates}}
+      <li>Up to {{features.maxCandidates}} candidates per election</li>
+    {{else}}
+      <li>Unlimited candidates</li>
+    {{/if}}
+    {{#if features.customBranding}}
+      <li>Custom branding</li>
+    {{/if}}
+    {{#if features.advancedAnalytics}}
+      <li>Advanced analytics</li>
+    {{/if}}
+    {{#if features.apiAccess}}
+      <li>API access</li>
+    {{/if}}
+    {{#if features.prioritySupport}}
+      <li>Priority support</li>
+    {{/if}}
+  </ul>
+
+  <p>To get started with your new subscription, you can:</p>
+  <ul>
+    <li>Create your first election</li>
+    <li>Set up your organization profile</li>
+    <li>Invite team members</li>
+  </ul>
+
+  <a href="{{dashboardUrl}}" class="button">Go to Dashboard</a>
+
+  <p>If you have any questions or need assistance, our support team is here to help.</p>
+
+  <p>Best regards,<br>The Blockchain Voting System Team</p>
+</div> 

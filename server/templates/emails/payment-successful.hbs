@@ -1,0 +1,22 @@
+{{> base}}
+
+<div>
+  <h2>Payment Successful</h2>
+  <p>Dear {{name}},</p>
+  <p>We're pleased to confirm that your payment has been successfully processed.</p>
+
+  <h3>Payment Details:</h3>
+  <ul>
+    <li>Amount: ${{amount}}</li>
+    <li>Date: {{formatDate date}}</li>
+    <li>Status: Completed</li>
+  </ul>
+
+  <p>Your subscription remains active, and you can continue using all features of your plan.</p>
+
+  <a href="{{dashboardUrl}}" class="button">View Payment History</a>
+
+  <p>If you have any questions about this payment or your subscription, please don't hesitate to contact our support team.</p>
+
+  <p>Best regards,<br>The Blockchain Voting System Team</p>
+</div> 

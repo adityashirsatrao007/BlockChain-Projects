@@ -1,0 +1,55 @@
+{{> base}}
+
+<div>
+  <h2>Your Subscription is Expiring Soon</h2>
+  <p>Dear {{name}},</p>
+  <p>Your {{plan}} plan subscription will expire on {{formatDate endDate}}.</p>
+
+  <h3>What happens next?</h3>
+  <ul>
+    <li>Your subscription will end on {{formatDate endDate}}</li>
+    <li>You'll lose access to premium features</li>
+    <li>Your data will be preserved for 30 days</li>
+  </ul>
+
+  <p>To maintain uninterrupted access to all features, please renew your subscription before it expires.</p>
+
+  <a href="{{renewalUrl}}" class="button">Renew Subscription</a>
+
+  <h3>Current Plan Features:</h3>
+  <ul class="feature-list">
+    {{#if features.maxElections}}
+      <li>Up to {{features.maxElections}} elections</li>
+    {{else}}
+      <li>Unlimited elections</li>
+    {{/if}}
+    {{#if features.maxVoters}}
+      <li>Up to {{features.maxVoters}} voters per election</li>
+    {{else}}
+      <li>Unlimited voters</li>
+    {{/if}}
+    {{#if features.maxCandidates}}
+      <li>Up to {{features.maxCandidates}} candidates per election</li>
+    {{else}}
+      <li>Unlimited candidates</li>
+    {{/if}}
+    {{#if features.customBranding}}
+      <li>Custom branding</li>
+    {{/if}}
+    {{#if features.advancedAnalytics}}
+      <li>Advanced analytics</li>
+    {{/if}}
+    {{#if features.apiAccess}}
+      <li>API access</li>
+    {{/if}}
+    {{#if features.prioritySupport}}
+      <li>Priority support</li>
+    {{/if}}
+  </ul>
+
+  <p>If you have any questions about your subscription or need assistance with renewal, our support team is here to help.</p>
+
+  <a href="{{supportUrl}}" class="button">Contact Support</a>
+
+  <p>Best regards,<br>The Blockchain Voting System Team</p>
+</div> 
