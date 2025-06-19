@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const subscriptionSchema = new mongoose.Schema({
-  userId: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -13,33 +13,18 @@ const subscriptionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'canceled', 'past_due', 'unpaid', 'trialing'],
-    default: 'active'
+    enum: ['active', 'cancelled', 'expired', 'trial'],
+    default: 'trial'
   },
-  stripeSubscriptionId: {
-    type: String,
-    required: true
+  startDate: {
+    type: Date,
+    default: Date.now
   },
-  stripeCustomerId: {
-    type: String,
-    required: true
-  },
-  currentPeriodStart: {
+  endDate: {
     type: Date,
     required: true
   },
-  currentPeriodEnd: {
-    type: Date,
-    required: true
-  },
-  cancelAtPeriodEnd: {
-    type: Boolean,
-    default: false
-  },
-  canceledAt: {
-    type: Date
-  },
-  trialEnd: {
+  trialEndsAt: {
     type: Date
   },
   features: {
@@ -51,19 +36,11 @@ const subscriptionSchema = new mongoose.Schema({
       type: Number,
       required: true
     },
-    maxCandidates: {
-      type: Number,
-      required: true
+    analytics: {
+      type: Boolean,
+      default: false
     },
     customBranding: {
-      type: Boolean,
-      default: false
-    },
-    advancedAnalytics: {
-      type: Boolean,
-      default: false
-    },
-    apiAccess: {
       type: Boolean,
       default: false
     },
@@ -72,130 +49,72 @@ const subscriptionSchema = new mongoose.Schema({
       default: false
     }
   },
-  metadata: {
-    type: Map,
-    of: String
+  billing: {
+    amount: {
+      type: Number,
+      required: true
+    },
+    currency: {
+      type: String,
+      default: 'USD'
+    },
+    interval: {
+      type: String,
+      enum: ['monthly', 'yearly'],
+      default: 'monthly'
+    },
+    nextBillingDate: Date,
+    paymentMethod: {
+      type: String,
+      enum: ['credit_card', 'bank_transfer', 'crypto'],
+      required: true
+    },
+    lastPaymentDate: Date,
+    lastPaymentAmount: Number
+  },
+  usage: {
+    electionsCreated: {
+      type: Number,
+      default: 0
+    },
+    totalVotes: {
+      type: Number,
+      default: 0
+    },
+    storageUsed: {
+      type: Number,
+      default: 0
+    }
   }
 }, {
   timestamps: true
 });
 
-// Indexes
-subscriptionSchema.index({ userId: 1 });
-subscriptionSchema.index({ stripeSubscriptionId: 1 });
-subscriptionSchema.index({ status: 1 });
-subscriptionSchema.index({ currentPeriodEnd: 1 });
+// Add index for efficient querying
+subscriptionSchema.index({ user: 1, status: 1 });
+subscriptionSchema.index({ endDate: 1 });
 
-// Methods
+// Method to check if subscription is active
 subscriptionSchema.methods.isActive = function() {
-  return this.status === 'active' || this.status === 'trialing';
+  return this.status === 'active' && new Date() <= this.endDate;
 };
 
+// Method to check if subscription is in trial
 subscriptionSchema.methods.isTrial = function() {
-  return this.status === 'trialing' && this.trialEnd > new Date();
+  return this.status === 'trial' && new Date() <= this.trialEndsAt;
 };
 
-subscriptionSchema.methods.isCanceled = function() {
-  return this.cancelAtPeriodEnd || this.status === 'canceled';
+// Method to check if subscription can be renewed
+subscriptionSchema.methods.canRenew = function() {
+  return ['active', 'expired'].includes(this.status);
 };
 
-subscriptionSchema.methods.isPastDue = function() {
-  return this.status === 'past_due';
-};
-
-subscriptionSchema.methods.isUnpaid = function() {
-  return this.status === 'unpaid';
-};
-
-subscriptionSchema.methods.isTrialing = function() {
-  return this.status === 'trialing';
-};
-
-subscriptionSchema.methods.willExpireSoon = function() {
-  const now = new Date();
-  const daysUntilExpiration = Math.ceil(
-    (this.currentPeriodEnd - now) / (1000 * 60 * 60 * 24)
+// Method to check if subscription has exceeded limits
+subscriptionSchema.methods.hasExceededLimits = function() {
+  return (
+    this.usage.electionsCreated >= this.features.maxElections ||
+    this.usage.totalVotes >= this.features.maxVoters
   );
-  return daysUntilExpiration <= 7;
 };
 
-subscriptionSchema.methods.getDaysRemaining = function() {
-  const now = new Date();
-  const end = this.currentPeriodEnd;
-  const diffTime = end - now;
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
-
-subscriptionSchema.methods.hasFeature = function(feature) {
-  return this.features[feature] === true;
-};
-
-subscriptionSchema.methods.getResourceLimit = function(resource) {
-  return this.features[`max${resource.charAt(0).toUpperCase() + resource.slice(1)}`];
-};
-
-// Static methods
-subscriptionSchema.statics.findActiveSubscriptions = function() {
-  return this.find({
-    status: { $in: ['active', 'trialing'] }
-  });
-};
-
-subscriptionSchema.statics.findExpiringSubscriptions = function() {
-  const now = new Date();
-  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-  return this.find({
-    status: { $in: ['active', 'trialing'] },
-    currentPeriodEnd: { $lte: sevenDaysFromNow }
-  });
-};
-
-subscriptionSchema.statics.findPastDueSubscriptions = function() {
-  return this.find({ status: 'past_due' });
-};
-
-subscriptionSchema.statics.getPlanFeatures = function(plan) {
-  const features = {
-    basic: {
-      maxElections: 5,
-      maxVoters: 100,
-      maxCandidates: 10,
-      customBranding: false,
-      advancedAnalytics: false,
-      apiAccess: false,
-      prioritySupport: false
-    },
-    professional: {
-      maxElections: 20,
-      maxVoters: 1000,
-      maxCandidates: 50,
-      customBranding: true,
-      advancedAnalytics: true,
-      apiAccess: false,
-      prioritySupport: false
-    },
-    enterprise: {
-      maxElections: -1, // Unlimited
-      maxVoters: -1, // Unlimited
-      maxCandidates: -1, // Unlimited
-      customBranding: true,
-      advancedAnalytics: true,
-      apiAccess: true,
-      prioritySupport: true
-    }
-  };
-  return features[plan];
-};
-
-// Pre-save middleware
-subscriptionSchema.pre('save', function(next) {
-  if (this.isModified('status') && this.status === 'canceled') {
-    this.canceledAt = new Date();
-  }
-  next();
-});
-
-const Subscription = mongoose.model('Subscription', subscriptionSchema);
-
-module.exports = Subscription; 
+module.exports = mongoose.model('Subscription', subscriptionSchema); 

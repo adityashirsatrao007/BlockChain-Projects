@@ -1,98 +1,61 @@
 const express = require('express');
-const compression = require('compression');
-const cookieParser = require('cookie-parser');
-const morgan = require('morgan');
-const path = require('path');
-const { createServer } = require('http');
+const http = require('http');
 const { Server } = require('socket.io');
+const cors = require('cors');
+const morgan = require('morgan');
+const helmet = require('helmet');
+const compression = require('compression');
 const { logger } = require('../middleware/loggingMiddleware');
-const securityMiddleware = require('../middleware/securityMiddleware');
-const {
-  loggingMiddleware,
-  errorLoggingMiddleware,
-  performanceLoggingMiddleware,
-  securityLoggingMiddleware,
-} = require('../middleware/loggingMiddleware');
-const { limiter } = require('../middleware/rateLimiter');
-const { errorHandler } = require('../middleware/errorHandler');
+
+// Import routes
+const userRoutes = require('../routes/userRoutes');
+const electionRoutes = require('../routes/electionRoutes');
+const blockchainRoutes = require('../routes/blockchainRoutes');
+const subscriptionRoutes = require('../routes/subscriptionRoutes');
+
+// Import socket handlers
+const socketHandler = require('../socket/socketHandler');
 
 const configureServer = (app) => {
-  // Security middleware
-  securityMiddleware(app);
-
-  // Basic middleware
-  app.use(express.json({ limit: '10kb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-  app.use(cookieParser());
+  // Middleware
+  app.use(cors());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use(morgan('dev'));
+  app.use(helmet());
   app.use(compression());
 
-  // Logging middleware
-  app.use(morgan('dev'));
-  app.use(loggingMiddleware);
-  app.use(performanceLoggingMiddleware);
-  app.use(securityLoggingMiddleware);
+  // Routes
+  app.use('/api/users', userRoutes);
+  app.use('/api/elections', electionRoutes);
+  app.use('/api/blockchain', blockchainRoutes);
+  app.use('/api/subscriptions', subscriptionRoutes);
 
-  // Rate limiting
-  app.use('/api', limiter);
-
-  // Static files
-  app.use(express.static(path.join(__dirname, '../public')));
+  // Error handling middleware
+  app.use((err, req, res, next) => {
+    logger.error(err.stack);
+    res.status(500).json({
+      message: 'Something went wrong!',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  });
 
   // Create HTTP server
-  const httpServer = createServer(app);
+  const httpServer = http.createServer(app);
 
   // Configure Socket.IO
   const io = new Server(httpServer, {
     cors: {
-      origin: process.env.CORS_ORIGIN,
+      origin: process.env.CLIENT_URL || 'http://localhost:3000',
       methods: ['GET', 'POST'],
-      credentials: true,
-    },
-    pingTimeout: 60000,
-  });
-
-  // Socket.IO middleware
-  io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
-    if (!token) {
-      return next(new Error('Authentication error'));
-    }
-    // Verify token and attach user to socket
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      socket.user = decoded;
-      next();
-    } catch (err) {
-      next(new Error('Authentication error'));
+      credentials: true
     }
   });
 
-  // Socket.IO connection handling
-  io.on('connection', (socket) => {
-    logger.info('New client connected:', socket.id);
+  // Initialize socket handlers
+  socketHandler(io);
 
-    socket.on('disconnect', () => {
-      logger.info('Client disconnected:', socket.id);
-    });
-
-    socket.on('error', (error) => {
-      logger.error('Socket error:', error);
-    });
-  });
-
-  // Error handling
-  app.use(errorLoggingMiddleware);
-  app.use(errorHandler);
-
-  // 404 handler
-  app.use((req, res) => {
-    res.status(404).json({
-      status: 'error',
-      message: 'Route not found',
-    });
-  });
-
-  return { app, httpServer, io };
+  return { httpServer, io };
 };
 
 module.exports = configureServer; 
